@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/snap
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libseccomp +liblzma +zlib +eudev +squashfs-tools-unsquashfs +kmod-loop +ca-certificates
+  DEPENDS:=+liblzma +zlib +squashfs-tools-unsquashfs +kmod-loop +ca-certificates
   TITLE:=Snappy Ubuntu Core
   URL:=https://developer.ubuntu.com/en/snappy/
 endef
@@ -43,8 +43,6 @@ define Package/snap/install
 	$(INSTALL_BIN) ./files/snap ./files/ubuntu-core-launcher $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
 	$(INSTALL_BIN) ./files/snapd.init $(1)/etc/init.d/snappy
-	$(INSTALL_BIN) ./files/systemctl $(1)/bin/
-	$(INSTALL_BIN) ./files/libapparmor.so.1 $(1)/lib/
 	$(INSTALL_BIN) ./files/systemctl $(1)/bin/
 endef
 
