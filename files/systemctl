@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#set -x
+#exec >/dev/console
+#exec 2>/dev/console
+
+split_name() {
+	case "$1" in
+	snap-*.mount)
+		snapname="${1%.mount}"
+		snapname="${snapname#snap-}"
+		version="${snapname#*-}"
+		snapname=$(echo "${snapname%-*}" |sed 's/\\x2d/-/')
+		snapdir="/snap/$snapname/$version"
+	;;
+	*)
+		exit 1
+	;;
+	esac
+}
+
+case "$1" in
+start)
+	split_name "$2"
+	snapfile="/var/lib/snapd/snaps/${snapname}_$version.snap"
+	mkdir -p "$snapdir"
+	mount -oloop "$snapfile" "$snapdir"
+	;;
+stop)
+	split_name "$2"
+	umount "$snapdir"
+	;;
+show)
+	[ "$2" = --property=ActiveState ] && shift
+	split_name "$2"
+	grep -q " $snapdir " /proc/mounts && echo 'ActiveState=active' || echo 'ActiveState=inactive'
+	;;
+esac
+

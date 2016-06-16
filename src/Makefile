@@ -1,0 +1,1 @@
+all:	snapd-wrapper
