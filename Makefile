@@ -60,7 +60,7 @@ endef
 
 define Build/Configure
 	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
-	CC=$(TARGET_CC) ./configure --disable-confinement
+	$(CONFIGURE_VARS) ./configure --disable-confinement $(CONFIGURE_ARGS)
 endef
 
 define Build/Compile
@@ -70,9 +70,9 @@ endef
 
 define Package/snap/install
 	$(INSTALL_DIR) $(1)/bin $(1)/usr/bin $(1)/usr/lib/snapd $(1)/lib $(1)/run $(1)/etc/systemd/system $(1)/etc/init.d/
-	$(INSTALL_BIN) ./files/snap $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/$(CONFIG_ARCH)/snap $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)/src/snap-confine $(1)/usr/bin/ubuntu-core-launcher
-	$(INSTALL_BIN) ./files/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
+	$(INSTALL_BIN) ./files/$(CONFIG_ARCH)/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
 	$(INSTALL_BIN) ./files/snapd.init $(1)/etc/init.d/snappy
 	$(INSTALL_BIN) ./files/systemctl $(1)/bin/
 endef
