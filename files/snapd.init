@@ -9,5 +9,6 @@ start_service() {
 	mkdir -p /var/lib/snapd
 	procd_open_instance
 	procd_set_param command /usr/lib/snapd/snapd-wrapper /usr/lib/snapd/snapd
+	procd_set_param respawn
 	procd_close_instance
 }
