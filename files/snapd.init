@@ -5,8 +5,18 @@ START=80
 
 USE_PROCD=1
 
+mount_snaps() {
+	for m in /etc/systemd/system/snap-*.mount; do
+		f=$(awk -F= '/^What=/{print $2}' "$m")
+		d=$(awk -F= '/^Where=/{print $2}' "$m")
+		[ -f "$f" -a -d "$d" ] && mount -oloop "$f" "$d"
+	done
+}
+
 start_service() {
 	mkdir -p /var/lib/snapd
+	mount_snaps
+
 	procd_open_instance
 	procd_set_param command /usr/lib/snapd/snapd-wrapper /usr/lib/snapd/snapd
 	procd_set_param respawn
