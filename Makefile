@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=snap
-PKG_VERSION:=2.0.9
+PKG_VERSION:=2.0.10
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/snapcore/snapd/archive/
-PKG_MD5SUM:=ab3546018390c9ffa73e5fd7a3f09ebe
+PKG_SOURCE:=snapd-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=http://people.canonical.com/~mcroce/
+PKG_MD5SUM:=d6d73d9abd64c1729775336d1caca993
 PKG_MAINTAINER:=Matteo Croce <matteo.croce@canonical.com>
 PKG_LICENSE:=GPL
 
@@ -51,6 +51,8 @@ $(eval $(call Download,snap-confine))
 
 define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	$(TAR) -C $(PKG_BUILD_DIR) -xvf $(DL_DIR)/$(PKG_SOURCE)
+	mv $(PKG_BUILD_DIR)/snapd-$(PKG_VERSION) $(PKG_BUILD_DIR)/src
 	$(TAR) -C $(PKG_BUILD_DIR) -xvf $(DL_DIR)/$(PKG_SNAPCONFINE_SOURCE)
 	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
 		aclocal && \
@@ -64,17 +66,47 @@ define Build/Configure
 	$(CONFIGURE_VARS) ./configure --disable-confinement $(CONFIGURE_ARGS)
 endef
 
+GOARCH:=$(ARCH)
+
+ifeq ($(GOARCH),i386)
+  GOARCH:=386
+  ifeq ($(CONFIG_CPU_TYPE),pentium4)
+    GOSUBARCH:=sse
+  else
+    GOSUBARCH:=387
+  endif
+endif
+ifeq ($(GOARCH),x86_64)
+  GOARCH:=amd64
+endif
+ifeq ($(GOARCH),aarch64)
+  GOARCH:=arm64
+endif
+ifeq ($(GOARCH),arm)
+  ifeq ($(CONFIG_arm_v5),y)
+    GOSUBARCH:=GOARM=5
+  endif
+  ifeq ($(CONFIG_arm_v6),y)
+    GOSUBARCH:=GOARM=6
+  endif
+  ifeq ($(CONFIG_arm_v7),y)
+    GOSUBARCH:=GOARM=7
+  endif
+endif
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) snapd-wrapper
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)
+	GOPATH=$(PKG_BUILD_DIR) GOARCH=$(GOARCH) $(GOSUBARCH) CGO_ENABLED=1 CC=$(TARGET_CC) go build -o $(PKG_BUILD_DIR)/snap github.com/snapcore/snapd/cmd/snap
+	GOPATH=$(PKG_BUILD_DIR) GOARCH=$(GOARCH) $(GOSUBARCH) CGO_ENABLED=1 CC=$(TARGET_CC) go build -o $(PKG_BUILD_DIR)/snapd github.com/snapcore/snapd/cmd/snapd
 endef
 
 define Package/snap/install
 	$(INSTALL_DIR) $(1)/bin $(1)/usr/bin $(1)/usr/lib/snapd $(1)/etc/init.d $(1)/snap $(1)/etc/systemd/system
 	$(LN) /var/run $(1)/run
-	$(INSTALL_BIN) ./files/$(CONFIG_ARCH)/snap $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snap $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)/src/snap-confine $(1)/usr/bin/ubuntu-core-launcher
-	$(INSTALL_BIN) ./files/$(CONFIG_ARCH)/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
 	$(INSTALL_BIN) ./files/snapd.init $(1)/etc/init.d/snapd
 	$(INSTALL_BIN) ./files/systemctl $(1)/bin/
 endef
