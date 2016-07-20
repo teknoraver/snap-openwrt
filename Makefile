@@ -38,12 +38,13 @@ PKG_SNAPCONFINE_NAME:=snap-confine
 PKG_SNAPCONFINE_VERSION:=1.0.30
 PKG_SNAPCONFINE_SOURCE:=$(PKG_SNAPCONFINE_VERSION).tar.gz
 PKG_SNAPCONFINE_SOURCE_URL:=https://github.com/snapcore/$(PKG_SNAPCONFINE_NAME)/archive/
-PKG_MD5SUM:=8aff95eed4ab350f1653d3b14856bb68
+PKG_SNAPCONFINE_MD5SUM:=be6967ad6663f59629ef198975e133c6
 PKG_SNAPCONFINE_SUBDIR:=$(PKG_SNAPCONFINE_NAME)
 
 define Download/snap-confine
   FILE:=$(PKG_SNAPCONFINE_SOURCE)
   URL:=$(PKG_SNAPCONFINE_SOURCE_URL)
+  MD5SUM:=$(PKG_SNAPCONFINE_MD5SUM)
   VERSION:=$(PKG_SNAPCONFINE_VERSION)
   SUBDIR:=$(PKG_SNAPCONFINE_SUBDIR)
 endef
@@ -94,16 +95,19 @@ ifeq ($(GOARCH),arm)
   endif
 endif
 
+GOENV:=GOPATH=$(PKG_BUILD_DIR) GOARCH=$(GOARCH) $(GOSUBARCH) CGO_ENABLED=1 CC=$(TARGET_CC)
+CMD:=github.com/snapcore/snapd/cmd
+GOFLAGS:=--ldflags='-s -w'
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) snapd-wrapper
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)
-	GOPATH=$(PKG_BUILD_DIR) GOARCH=$(GOARCH) $(GOSUBARCH) CGO_ENABLED=1 CC=$(TARGET_CC) go build -o $(PKG_BUILD_DIR)/snap github.com/snapcore/snapd/cmd/snap
-	GOPATH=$(PKG_BUILD_DIR) GOARCH=$(GOARCH) $(GOSUBARCH) CGO_ENABLED=1 CC=$(TARGET_CC) go build -o $(PKG_BUILD_DIR)/snapd github.com/snapcore/snapd/cmd/snapd
+	$(GOENV) go build -o $(PKG_BUILD_DIR)/snap $(GOFLAGS) $(CMD)/snap
+	$(GOENV) go build -o $(PKG_BUILD_DIR)/snapd $(GOFLAGS) $(CMD)/snapd
 endef
 
 define Package/snap/install
 	$(INSTALL_DIR) $(1)/bin $(1)/usr/bin $(1)/usr/lib/snapd $(1)/etc/init.d $(1)/snap $(1)/etc/systemd/system
-	$(LN) /var/run $(1)/run
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snap $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)/src/snap-confine $(1)/usr/bin/ubuntu-core-launcher
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
