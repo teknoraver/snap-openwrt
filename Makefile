@@ -12,7 +12,7 @@ PKG_VERSION:=2.0.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=snapd-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=http://people.canonical.com/~mcroce/
+PKG_SOURCE_URL:=http://people.canonical.com/~teknoraver/
 PKG_MD5SUM:=d6d73d9abd64c1729775336d1caca993
 PKG_MAINTAINER:=Matteo Croce <matteo.croce@canonical.com>
 PKG_LICENSE:=GPL
