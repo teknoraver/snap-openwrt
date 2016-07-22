@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/snap
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+liblzma +zlib +squashfs-tools-unsquashfs +kmod-loop +ca-certificates
+  DEPENDS:=+liblzma +zlib +squashfs-tools-unsquashfs +kmod-loop +ca-certificates +libseccomp +libudev
   TITLE:=Snappy Ubuntu Core
   URL:=https://developer.ubuntu.com/en/snappy/
 endef
@@ -35,15 +35,16 @@ define Package/snap/description
 endef
 
 PKG_SNAPCONFINE_NAME:=snap-confine
-PKG_SNAPCONFINE_VERSION:=1.0.30
-PKG_SNAPCONFINE_SOURCE:=$(PKG_SNAPCONFINE_VERSION).tar.gz
-PKG_SNAPCONFINE_SOURCE_URL:=https://github.com/snapcore/$(PKG_SNAPCONFINE_NAME)/archive/
-PKG_SNAPCONFINE_MD5SUM:=be6967ad6663f59629ef198975e133c6
+PKG_SNAPCONFINE_VERSION:=1.0.38
+PKG_SNAPCONFINE_SOURCE:=$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION).tar.gz
+PKG_SNAPCONFINE_SOURCE_URL:=https://codeload.github.com/snapcore/snap-confine/tar.gz
+PKG_SNAPCONFINE_MD5SUM:=dccef43551471e7266630dd12e44ab4d
 PKG_SNAPCONFINE_SUBDIR:=$(PKG_SNAPCONFINE_NAME)
 
 define Download/snap-confine
   FILE:=$(PKG_SNAPCONFINE_SOURCE)
   URL:=$(PKG_SNAPCONFINE_SOURCE_URL)
+  URL_FILE:=$(PKG_SNAPCONFINE_VERSION)
   MD5SUM:=$(PKG_SNAPCONFINE_MD5SUM)
   VERSION:=$(PKG_SNAPCONFINE_VERSION)
   SUBDIR:=$(PKG_SNAPCONFINE_SUBDIR)
@@ -55,6 +56,7 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xvf $(DL_DIR)/$(PKG_SOURCE)
 	mv $(PKG_BUILD_DIR)/snapd-$(PKG_VERSION) $(PKG_BUILD_DIR)/src
 	$(TAR) -C $(PKG_BUILD_DIR) -xvf $(DL_DIR)/$(PKG_SNAPCONFINE_SOURCE)
+	for p in patches-confine/*.patch ; do patch -d $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) -p1 <$$$$p ; done
 	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
 		aclocal && \
 		autoheader && \
@@ -64,7 +66,7 @@ endef
 
 define Build/Configure
 	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
-	$(CONFIGURE_VARS) ./configure --disable-confinement $(CONFIGURE_ARGS)
+	$(CONFIGURE_VARS) ./configure --disable-apparmor $(CONFIGURE_ARGS)
 endef
 
 GOARCH:=$(ARCH)
@@ -101,7 +103,7 @@ GOFLAGS:=--ldflags='-s -w'
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) snapd-wrapper
-	$(MAKE) -C $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)
+	$(MAKE) -C $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) SUBDIRS=src
 	$(GOENV) go build -o $(PKG_BUILD_DIR)/snap $(GOFLAGS) $(CMD)/snap
 	$(GOENV) go build -o $(PKG_BUILD_DIR)/snapd $(GOFLAGS) $(CMD)/snapd
 endef
