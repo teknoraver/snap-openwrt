@@ -10,7 +10,7 @@ split_name() {
 		snapname="${1%.mount}"
 		snapname="${snapname#snap-}"
 		version="${snapname#*-}"
-		snapname=$(echo "${snapname%-*}" |sed 's/\\x2d/-/')
+		snapname=$(echo "${snapname%-*}" |sed 's/\\x2d/-/g')
 		snapdir="/snap/$snapname/$version"
 	;;
 	*)
