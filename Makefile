@@ -109,7 +109,7 @@ define Build/Compile
 endef
 
 define Package/snap/install
-	$(INSTALL_DIR) $(1)/bin $(1)/usr/bin $(1)/usr/lib/snapd $(1)/etc/init.d $(1)/snap $(1)/etc/systemd/system
+	$(INSTALL_DIR) $(1)/bin $(1)/usr/bin $(1)/usr/lib/snapd $(1)/etc/init.d $(1)/snap $(1)/etc/systemd/system $(1)/home $(1)/media
 	$(LN) /var/run $(1)/run
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snap $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)/src/snap-confine $(1)/usr/bin/ubuntu-core-launcher
