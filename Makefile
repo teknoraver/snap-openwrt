@@ -73,10 +73,10 @@ GOARCH:=$(ARCH)
 
 ifeq ($(GOARCH),i386)
   GOARCH:=386
-  ifeq ($(CONFIG_CPU_TYPE),pentium4)
-    GOSUBARCH:=sse
+  ifeq ($(CONFIG_CPU_TYPE),"pentium4")
+    GOSUBARCH:=GO386=sse2
   else
-    GOSUBARCH:=387
+    GOSUBARCH:=GO386=387
   endif
 endif
 ifeq ($(GOARCH),x86_64)
