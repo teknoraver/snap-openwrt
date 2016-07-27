@@ -1,39 +1,81 @@
 #!/bin/sh
 
-#set -x
-#exec >/dev/console
-#exec 2>/dev/console
+[ "$1" = --root -a "$2" = / ] && shift 2
 
-split_name() {
-	case "$1" in
-	snap-*.mount)
-		snapname="${1%.mount}"
-		snapname="${snapname#snap-}"
-		version="${snapname#*-}"
-		snapname=$(echo "${snapname%-*}" |sed 's/\\x2d/-/g')
-		snapdir="/snap/$snapname/$version"
-	;;
-	*)
-		exit 1
-	;;
-	esac
+sdir=/etc/systemd/system
+
+mount_snap() {
+	f=$(awk -FWhat= '/^What=/{print $2}' "$1")
+	d=$(awk -FWhere= '/^Where=/{print $2}' "$1")
+	[ -f "$f" -a -d "$d" ] && mount -oloop "$f" "$d"
+}
+
+umount_snap() {
+	d=$(awk -FWhere= '/^Where=/{print $2}' "$1")
+	[ -d "$d" ] && umount "$d"
+}
+
+start_service() {
+	. /lib/config/uci.sh
+	. /lib/functions/procd.sh
+
+	x=$(awk -FExecStart= '/^ExecStart=/{print $2}' "$1")
+	e=$(awk -FEnvironment= '/^Environment=/{print $2}' "$1")
+	w=$(awk -FWorkingDirectory= '/^WorkingDirectory=/{print $2}' "$1")
+	[ -n "$x" -a -n "$e" -a -d "$w" ] && {
+		service_triggers() { :; }
+		local name=${1%.*}
+		name=${name##*/}
+		procd_open_service $name
+		procd_open_instance
+		procd_set_param respawn
+		eval procd_set_param env $e
+		procd_set_param command $x
+		procd_close_instance
+		procd_close_service
+	}
+}
+
+show_mount() {
+	d=$(awk -FWhere= '/^Where=/{print $2}' "$1")
+	grep -q " $d " /proc/mounts && echo 'ActiveState=active' || echo 'ActiveState=inactive'
+}
+
+stop_service() {
+	. /lib/functions/procd.sh
+
+	local name=${1%.*}
+	name=${name##*/}
+	ubus call service delete "{ \"name\": \"$name\" }"
 }
 
 case "$1" in
 start)
-	split_name "$2"
-	snapfile="/var/lib/snapd/snaps/${snapname}_$version.snap"
-	mkdir -p "$snapdir"
-	mount -oloop "$snapfile" "$snapdir"
+	case "$2" in
+	*.mount)
+		mount_snap "$sdir/$2"
+		;;
+	*service)
+		start_service "$sdir/$2"
+		;;
+	esac
 	;;
-stop)
-	split_name "$2"
-	umount "$snapdir"
+stop|kill)
+	case "$2" in
+	*.mount)
+		umount_snap "$sdir/$2"
+		;;
+	*service)
+		stop_service "$sdir/$2"
+		;;
+	esac
 	;;
 show)
 	[ "$2" = --property=ActiveState ] && shift
-	split_name "$2"
-	grep -q " $snapdir " /proc/mounts && echo 'ActiveState=active' || echo 'ActiveState=inactive'
+	show_mount "$sdir/$2"
+	;;
+enable|disable|daemon-reload)
+	;;
+*)
 	;;
 esac
-
