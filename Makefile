@@ -19,13 +19,18 @@ PKG_LICENSE:=GPL
 
 include $(INCLUDE_DIR)/package.mk
 
-# add CONFIG_SQUASHFS_TOOLS_XZ_SUPPORT and CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
-# and kernel CONFIG_SQUASHFS_XZ too
+# configure options to enable:
+# CONFIG_SQUASHFS_TOOLS_XZ_SUPPORT
+# CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
+# CONFIG_BUSYBOX_CONFIG_FEATURE_BASH_IS_ASH
+# CONFIG_TARGET_INIT_PATH="/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+# kernel options:
+# CONFIG_SQUASHFS_XZ
 
 define Package/snap
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+liblzma +zlib +squashfs-tools-unsquashfs +kmod-loop +ca-certificates +libseccomp +libudev
+  DEPENDS:=+squashfs-tools-unsquashfs +kmod-loop +ca-certificates +KERNEL_SECCOMP:libseccomp +libudev
   TITLE:=Snappy Ubuntu Core
   URL:=https://developer.ubuntu.com/en/snappy/
 endef
@@ -63,6 +68,10 @@ define Build/Prepare
 		automake --force-missing --add-missing && \
 		autoconf
 endef
+
+ifeq ($(CONFIG_KERNEL_SECCOMP),)
+  CONFIGURE_ARGS += --disable-seccomp
+endif
 
 define Build/Configure
 	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
