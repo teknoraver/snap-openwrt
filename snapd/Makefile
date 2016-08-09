@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=snap
+PKG_NAME:=snapd
 PKG_VERSION:=2.0.10
 PKG_RELEASE:=1
 
@@ -27,55 +27,25 @@ include $(INCLUDE_DIR)/package.mk
 # kernel options:
 # CONFIG_SQUASHFS_XZ
 
-define Package/snap
+define Package/snapd
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+squashfs-tools-unsquashfs +kmod-loop +ca-certificates +KERNEL_SECCOMP:libseccomp +libudev
-  TITLE:=Snappy Ubuntu Core
+  DEPENDS:=+snap-confine +squashfs-tools-unsquashfs +kmod-loop +ca-certificates +libudev
+  TITLE:=Snappy Ubuntu Core Daemon
   URL:=https://developer.ubuntu.com/en/snappy/
 endef
 
-define Package/snap/description
+define Package/snapd/description
  Snappy is part of Ubuntu Core and enables a fully transactional Ubuntu system.
 endef
-
-PKG_SNAPCONFINE_NAME:=snap-confine
-PKG_SNAPCONFINE_VERSION:=1.0.38
-PKG_SNAPCONFINE_SOURCE:=$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION).tar.gz
-PKG_SNAPCONFINE_SOURCE_URL:=https://codeload.github.com/snapcore/snap-confine/tar.gz
-PKG_SNAPCONFINE_MD5SUM:=dccef43551471e7266630dd12e44ab4d
-PKG_SNAPCONFINE_SUBDIR:=$(PKG_SNAPCONFINE_NAME)
-
-define Download/snap-confine
-  FILE:=$(PKG_SNAPCONFINE_SOURCE)
-  URL:=$(PKG_SNAPCONFINE_SOURCE_URL)
-  URL_FILE:=$(PKG_SNAPCONFINE_VERSION)
-  MD5SUM:=$(PKG_SNAPCONFINE_MD5SUM)
-  VERSION:=$(PKG_SNAPCONFINE_VERSION)
-  SUBDIR:=$(PKG_SNAPCONFINE_SUBDIR)
-endef
-$(eval $(call Download,snap-confine))
 
 define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	$(TAR) -C $(PKG_BUILD_DIR) -xvf $(DL_DIR)/$(PKG_SOURCE)
 	mv $(PKG_BUILD_DIR)/snapd-$(PKG_VERSION) $(PKG_BUILD_DIR)/src
-	$(TAR) -C $(PKG_BUILD_DIR) -xvf $(DL_DIR)/$(PKG_SNAPCONFINE_SOURCE)
-	for p in patches-confine/*.patch ; do patch -d $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) -p1 <$$$$p ; done
-	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
-		aclocal && \
-		autoheader && \
-		automake --force-missing --add-missing && \
-		autoconf
 endef
 
-ifeq ($(CONFIG_KERNEL_SECCOMP),)
-  CONFIGURE_ARGS += --disable-seccomp
-endif
-
 define Build/Configure
-	cd $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) && \
-	$(CONFIGURE_VARS) ./configure --disable-apparmor $(CONFIGURE_ARGS)
 endef
 
 GOARCH:=$(ARCH)
@@ -112,19 +82,17 @@ GOFLAGS:=--ldflags='-s -w'
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) snapd-wrapper
-	$(MAKE) -C $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION) SUBDIRS=src
 	$(GOENV) go build -o $(PKG_BUILD_DIR)/snap $(GOFLAGS) $(CMD)/snap
 	$(GOENV) go build -o $(PKG_BUILD_DIR)/snapd $(GOFLAGS) $(CMD)/snapd
 endef
 
-define Package/snap/install
+define Package/snapd/install
 	$(INSTALL_DIR) $(1)/bin $(1)/usr/bin $(1)/usr/lib/snapd $(1)/etc/init.d $(1)/snap $(1)/etc/systemd/system $(1)/home $(1)/media
 	$(LN) /var/run $(1)/run
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snap $(1)/usr/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_SNAPCONFINE_NAME)-$(PKG_SNAPCONFINE_VERSION)/src/snap-confine $(1)/usr/bin/ubuntu-core-launcher
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snapd $(PKG_BUILD_DIR)/snapd-wrapper $(1)/usr/lib/snapd/
 	$(INSTALL_BIN) ./files/snapd.init $(1)/etc/init.d/snapd
 	$(INSTALL_BIN) ./files/systemctl $(1)/bin/
 endef
 
-$(eval $(call BuildPackage,snap))
+$(eval $(call BuildPackage,snapd))
