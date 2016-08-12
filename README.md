@@ -7,7 +7,9 @@ This is the OpenWrt "snap"-feed containing Snap -
 ## Usage
 
 This feed is not enabled by default. To use it add to your feeds.conf.default a line like:
-```src-git snap https://github.com/teknoraver/snap-openwrt```
+```
+src-git snap https://github.com/teknoraver/snap-openwrt
+```
 To install all its package definitions, run:
 ```
 ./scripts/feeds update snap
