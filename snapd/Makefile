@@ -22,7 +22,6 @@ include $(INCLUDE_DIR)/package.mk
 # configure options to enable:
 # CONFIG_SQUASHFS_TOOLS_XZ_SUPPORT
 # CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
-# CONFIG_BUSYBOX_CONFIG_FEATURE_BASH_IS_ASH
 # CONFIG_TARGET_INIT_PATH="/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
 # kernel options:
 # CONFIG_SQUASHFS_XZ
@@ -30,7 +29,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/snapd
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+snap-confine +squashfs-tools-unsquashfs +kmod-loop +ca-certificates +libudev
+  DEPENDS:=+snap-confine +squashfs-tools-unsquashfs +kmod-loop +kmod-fs-squashfs +ca-certificates +libudev
   TITLE:=Snappy Ubuntu Core Daemon
   URL:=https://developer.ubuntu.com/en/snappy/
 endef

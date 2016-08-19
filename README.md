@@ -22,12 +22,6 @@ Utilities -> Enable XZ support
 Base system -> busybox -> Linux System Utilities -> Support loopback mounts
 Add ":/snap/bin" to Image configuration -> Init configuration options -> PATH for regular boot
 ```
-run ```make kernel_menuconfig``` and select
-```
-File systems -> Miscellaneous filesystems -> SquashFS 4.0 - Squashed file system support
-with
-Include support for XZ compressed file systems
-```
 apply the persistent /var patch with:
 ```
 curl https://people.canonical.com/~teknoraver/openwrt_persistent_var.patch |patch -p1
