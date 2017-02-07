@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=snap-confine
-PKG_VERSION:=1.0.39
+PKG_VERSION:=1.0.44
 PKG_RELEASE:=1
-PKG_SOURCE:=$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/snapcore/snap-confine/archive/
-PKG_MD5SUM:=9809499c0a9f2059c09c28feb38500e4
+PKG_SOURCE:=snap-confine-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/snapcore/snap-confine/releases/download/1.0.44/
+PKG_MD5SUM:=fddae5989048bc4767afb4a699aebb5c
 
 PKG_MAINTAINER:=Matteo Croce <matteo.croce@canonical.com>
 PKG_LICENSE:=GPL
@@ -54,7 +54,7 @@ endif
 
 define Build/Configure
 	cd $(PKG_BUILD_DIR) && \
-		$(CONFIGURE_VARS) ./configure --disable-apparmor $(CONFIGURE_ARGS)
+		$(CONFIGURE_VARS) ./configure --disable-apparmor --without-unit-tests $(CONFIGURE_ARGS)
 endef
 
 define Build/Compile
